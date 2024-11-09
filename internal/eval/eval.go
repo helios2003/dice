@@ -2849,6 +2849,43 @@ func evalGEODIST(args []string, store *dstore.Store) []byte {
 	return clientio.Encode(utils.RoundToDecimals(result, 4), false)
 }
 
+func evalGEOPOS(args []string, store *dstore.Store) []byte {
+	if len(args) < 2 {
+		return diceerrors.NewErrArity("GEOPOS")
+	}
+
+	key := args[0]
+	obj := store.Get(key)
+	if obj == nil {
+		return clientio.RespNIL
+	}
+	
+	ss, err := sortedset.FromObject(obj)
+	if err != nil {
+		return err
+	}
+
+	results := make([]interface{}, len(args) - 1)
+
+    for index := 1; index < len(args); index++ {
+        member := args[index]
+        score, ok := ss.Get(member)
+        if !ok {
+            results[index - 1] = (nil)
+            continue
+        }
+
+        lat, lon := geo.DecodeHash(score)
+
+		results[index - 1] = []interface{}{
+            fmt.Sprintf("%f", lon),
+            fmt.Sprintf("%f", lat),
+        }
+    }
+
+	return clientio.Encode(results, false)
+}
+
 // evalJSONSTRAPPEND appends a string value to the JSON string value at the specified path
 // in the JSON object saved at the key in arguments.
 // Args must contain at least a key and the string value to append.

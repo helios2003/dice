@@ -124,6 +124,7 @@ func TestEval(t *testing.T) {
 	testEvalBitFieldRO(t, store)
 	testEvalGEOADD(t, store)
 	testEvalGEODIST(t, store)
+	testEvalGEOPOS(t, store)
 	testEvalSINTER(t, store)
 	testEvalOBJECTENCODING(t, store)
 	testEvalJSONSTRAPPEND(t, store)
@@ -7895,6 +7896,65 @@ func testEvalGEODIST(t *testing.T, store *dstore.Store) {
 	}
 
 	runEvalTests(t, tests, evalGEODIST, store)
+}
+
+func testEvalGEOPOS(t *testing.T, store *dstore.Store) {
+	tests := map[string]evalTestCase{ 
+		"GEOPOS for existing single point": {
+			setup: func() {
+				evalGEOADD([]string{"index", "13.361387", "38.115556", "Palermo"}, store)
+			},
+			input:  []string{"index", "Palermo"},
+			output: clientio.Encode([]interface{}{
+				[]interface{}{13.361387, 38.115556},
+			}, false),
+		},
+		"GEOPOS for multiple existing points": {
+			setup: func() {
+				evalGEOADD([]string{"points", "13.361387", "38.115556", "Palermo"}, store)
+				evalGEOADD([]string{"points", "15.087265", "37.502668", "Catania"}, store)
+			},
+			input:  []string{"points", "Palermo", "Catania"},
+			output: clientio.Encode([]interface{}{
+				[]interface{}{13.361387, 38.115556},[]interface{}{15.087265, 37.502668},
+			}, false),
+		},
+		"GEOPOS for a point that does not exist": {
+			setup: func() {
+				evalGEOADD([]string{"index", "13.361387", "38.115556", "Palermo"}, store)
+			},
+			input:  []string{"index", "NonExisting"},
+			output: clientio.Encode([]interface{}{nil}, false),
+		},
+		"GEOPOS for multiple points, one existing and one non-existing": {
+			setup: func() {
+				evalGEOADD([]string{"index", "13.361387", "38.115556", "Palermo"}, store)
+			},
+			input:  []string{"index", "Palermo", "NonExisting"},
+			output: clientio.Encode([]interface{}{
+				[]interface{}{13.361387, 38.115556}, nil,
+			}, false),
+		},
+		"GEOPOS for empty index": {
+			setup: func() {
+				evalGEOADD([]string{"", "13.361387", "38.115556", "Palermo"}, store)
+			},
+			input:  []string{"", "Palermo"},
+			output: clientio.Encode([]interface{}{
+				[]interface{}{"13.361387", "38.115556"},
+			}, false), 
+		},
+		"GEOPOS with no members in key": {
+			input:  []string{"index", "Palermo"},
+			output: clientio.RespNIL, 
+		},
+		"GEOPOS with invalid number of arguments": {
+			input:  []string{"index"},
+			output: diceerrors.NewErrArity("GEOPOS"),
+		},
+	}
+
+	runEvalTests(t, tests, evalGEOPOS, store)
 }
 
 func testEvalSINTER(t *testing.T, store *dstore.Store) {
