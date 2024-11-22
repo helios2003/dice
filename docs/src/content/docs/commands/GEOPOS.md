@@ -54,7 +54,7 @@ When the GEOPOS command is issued, DiceDB performs the following steps:
 
 Here are a few examples demonstrating the usage of the GEOPOS command:
 
-### Example 1: Fetching the latitude, longitude of an existing member of the set
+### Fetching the latitude, longitude of an existing member of the set
 
 ```bash
 127.0.0.1:7379> GEOADD Sicily 13.361389 38.115556 "Palermo" 15.087269 37.502669 "Catania"
@@ -64,7 +64,7 @@ Here are a few examples demonstrating the usage of the GEOPOS command:
 2) 38.115556
 ```
 
-### Example 2: Fetching the latitude, longitude of a member not in the set
+### Fetching the latitude, longitude of a member not in the set
 
 ```bash
 127.0.0.1:7379> GEOPOS Sicily "Agrigento"
